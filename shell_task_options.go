@@ -14,15 +14,26 @@ type shellTaskOptions struct {
 	shellWaitDelay  time.Duration
 }
 
+// Options for a shell task
 type ShellTaskOption taskOption[shellTaskOptions]
 
+// Context to be supplied to the function
+// Usually used for timeouts
 var WithShellContext = withContext[shellTaskOptions]
-var WithShellMeta = withMeta[shellTaskOptions]
+
+// Print start and end of the execution to stdout
 var WithShellPrintStartAndEndInOutput = withPrintStartAndEndInOutput[shellTaskOptions]
+
+// Write stdout on the given writer (default: os.Discard)
 var WithShellStdout = withStdout[shellTaskOptions]
+
+// Write stderr on the given writer (default: os.Discard)
 var WithShellStderr = withStderr[shellTaskOptions]
+
+// Write stdout and stderr on the given writer (default: os.Discard)
 var WithShellCombinedOutput = withCombinedOutput[shellTaskOptions]
 
+// Shell command to be executed.
 func WithShellCommand(command string, args ...string) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellCommand = command
@@ -31,6 +42,7 @@ func WithShellCommand(command string, args ...string) ShellTaskOption {
 	})
 }
 
+// Environment variables to be set before executing the command
 func WithShellEnvironment(env []string) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellEnv = env
@@ -38,6 +50,7 @@ func WithShellEnvironment(env []string) ShellTaskOption {
 	})
 }
 
+// Working directory to be set before executing the command
 func WithShellWorkingDir(workingDir string) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellWorkingDir = workingDir
@@ -45,6 +58,7 @@ func WithShellWorkingDir(workingDir string) ShellTaskOption {
 	})
 }
 
+// Term signal to be sent to the process-group-id of the command (default: SIGTERM)
 func WithShellTermSignal(termSignal syscall.Signal) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellTermSignal = termSignal
@@ -52,6 +66,7 @@ func WithShellTermSignal(termSignal syscall.Signal) ShellTaskOption {
 	})
 }
 
+// Time to wait after sending the term signal before sending the kill signal (default: 1s)
 func WithShellWaitDelay(waitDelay time.Duration) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellWaitDelay = waitDelay

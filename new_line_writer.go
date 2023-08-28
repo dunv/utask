@@ -2,6 +2,7 @@ package utask
 
 import "io"
 
+// helper for appending newlines to the output
 type newLineWriter struct {
 	w io.Writer
 }

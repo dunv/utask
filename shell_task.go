@@ -15,6 +15,7 @@ type shellTask struct {
 	cmd  *exec.Cmd
 }
 
+// Create a new shell task
 func NewShellTask(opts ...ShellTaskOption) (Task, error) {
 	mergedOpts := options[shellTaskOptions]{
 		specific: shellTaskOptions{
@@ -41,6 +42,7 @@ func NewShellTask(opts ...ShellTaskOption) (Task, error) {
 	return &shellTask{opts: mergedOpts}, nil
 }
 
+// Runs the task and waits for it to complete
 func (t *shellTask) Run() error {
 	err := t.Start()
 	if err != nil {
@@ -50,10 +52,8 @@ func (t *shellTask) Run() error {
 	return t.Wait()
 }
 
-func (t *shellTask) String() string {
-	return fmt.Sprintf("ShellTask{command:%s, args:%s}", t.opts.specific.shellCommand, strings.Join(t.opts.specific.shellArgs, " "))
-}
-
+// Start the task, but don't wait for it to complete.
+// Can be run in a go-routine if asynchroneous execution is desired.
 func (t *shellTask) Start() error {
 	cmd := exec.CommandContext(t.opts.ctx, t.opts.specific.shellCommand, t.opts.specific.shellArgs...)
 
@@ -104,6 +104,7 @@ func (t *shellTask) Start() error {
 	return nil
 }
 
+// Wait for the task to be completed. Can only be called once.
 func (t *shellTask) Wait() error {
 	if t.cmd == nil {
 		return errors.New("utask: not started")
@@ -121,6 +122,10 @@ func (t *shellTask) Wait() error {
 		return err
 	}
 	return nil
+}
+
+func (t *shellTask) String() string {
+	return fmt.Sprintf("ShellTask{command:%s, args:%s}", t.opts.specific.shellCommand, strings.Join(t.opts.specific.shellArgs, " "))
 }
 
 func (t *shellTask) printStdOut(format string, args ...interface{}) {

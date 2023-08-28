@@ -7,7 +7,6 @@ import (
 
 type options[T specificOptions] struct {
 	ctx                      context.Context
-	meta                     interface{}
 	printStartAndEndInOutput bool
 	stdout                   io.Writer
 	stderr                   io.Writer
@@ -37,13 +36,6 @@ func newFuncTaskOption[T specificOptions](f func(*options[T]) error) *funcTaskOp
 func withContext[T specificOptions](ctx context.Context) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.ctx = ctx
-		return nil
-	})
-}
-
-func withMeta[T specificOptions](meta interface{}) taskOption[T] {
-	return newFuncTaskOption(func(o *options[T]) error {
-		o.meta = meta
 		return nil
 	})
 }

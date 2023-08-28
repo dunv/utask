@@ -15,6 +15,7 @@ type functionTask struct {
 	ret    chan error
 }
 
+// Create a new function task
 func NewFunctionTask(opts ...FunctionTaskOption) (Task, error) {
 	mergedOpts := options[functionTaskOptions]{
 		specific: functionTaskOptions{},
@@ -49,6 +50,7 @@ func NewFunctionTask(opts ...FunctionTaskOption) (Task, error) {
 	}, nil
 }
 
+// Runs the task and waits for it to complete
 func (t *functionTask) Run() error {
 	err := t.Start()
 	if err != nil {
@@ -58,10 +60,8 @@ func (t *functionTask) Run() error {
 	return t.Wait()
 }
 
-func (t *functionTask) String() string {
-	return fmt.Sprintf("FunctionTask{fn:%p}", t.opts.specific.fn)
-}
-
+// Start the task, but don't wait for it to complete.
+// Can be run in a go-routine if asynchroneous execution is desired.
 func (t *functionTask) Start() error {
 	t.ret = make(chan error)
 
@@ -76,9 +76,14 @@ func (t *functionTask) Start() error {
 	return nil
 }
 
+// Wait for the task to be completed. Can only be called once.
 func (t *functionTask) Wait() error {
 	if t.ret == nil {
 		return errors.New("utask: not started")
 	}
 	return <-t.ret
+}
+
+func (t *functionTask) String() string {
+	return fmt.Sprintf("FunctionTask{fn:%p}", t.opts.specific.fn)
 }

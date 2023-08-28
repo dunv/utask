@@ -6,6 +6,8 @@ import (
 	"io"
 )
 
+// helper for collecting and checking output
+// in tests
 type Output interface {
 	io.Writer
 	Lines() []string
@@ -15,6 +17,8 @@ type output struct {
 	buf *bytes.Buffer
 }
 
+// create helper for collecting and checking output
+// in tests
 func NewOutput() *output {
 	return &output{
 		buf: bytes.NewBuffer([]byte{}),

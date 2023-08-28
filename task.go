@@ -1,27 +1,11 @@
 package utask
 
 type Task interface {
-	// String() string
-
-	// Control
+	// Runs the task and waits for it to complete
 	Run() error
+	// Start the task, but don't wait for it to complete.
+	// Can be run in a go-routine if asynchroneous execution is desired.
 	Start() error
+	// Wait for the task to be completed. Can only be called once.
 	Wait() error
-
-	// Get metadata
-	// GUID() uuid.UUID
-	// Command() string
-	// Args() []string
-	// WorkingDir() string
-	// Status() TaskStatus
-	// Env() []string
-	// Meta() interface{}
-
-	// Get Status
-	// StartedAt() *time.Time
-	// FinishedAt() *time.Time
-	// ExitCode() int
-	// Error() error
-	// Executed() bool
-	// Output() []TaskOutput
 }
