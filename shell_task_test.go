@@ -18,7 +18,7 @@ func TestShellTaskSimple(t *testing.T) {
 	o := utask.NewOutput()
 	task, err := utask.NewShellTask(
 		utask.WithShellPrintStartAndEndInOutput(),
-		utask.WithCommand("/bin/sh", "-c", "echo hallo"),
+		utask.WithShellCommand("/bin/sh", "-c", "echo hallo"),
 		utask.WithShellCombinedOutput(o),
 	)
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func TestShellTaskSimple(t *testing.T) {
 func TestShellTaskInitErrorCombined(t *testing.T) {
 	o := utask.NewOutput()
 	task, err := utask.NewShellTask(
-		utask.WithCommand("/bin/shNotExisting", "-c", "echo hallo"),
+		utask.WithShellCommand("/bin/shNotExisting", "-c", "echo hallo"),
 		utask.WithShellCombinedOutput(o),
 	)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestShellTaskCancel(t *testing.T) {
 	stderr := utask.NewOutput()
 	task, err := utask.NewShellTask(
 		utask.WithShellContext(ctx),
-		utask.WithCommand("/bin/sh", "-c", "echo 1 && sleep 1 && echo 2 && sleep 1 && echo 3"),
+		utask.WithShellCommand("/bin/sh", "-c", "echo 1 && sleep 1 && echo 2 && sleep 1 && echo 3"),
 		utask.WithShellStdout(stdout),
 		utask.WithShellStderr(stderr),
 	)
@@ -162,20 +162,20 @@ func runShell(cmd string, args []string, timeout time.Duration, workingDir strin
 	stdout := utask.NewOutput()
 	stderr := utask.NewOutput()
 
-	opts := []utask.TaskOption[utask.ShellTaskOptions]{
+	opts := []utask.ShellTaskOption{
 		utask.WithShellContext(ctx),
-		utask.WithCommand(cmd, args...),
+		utask.WithShellCommand(cmd, args...),
 		utask.WithShellStdout(stdout),
 		utask.WithShellStderr(stderr),
-		utask.WithTermSignal(termSignal),
+		utask.WithShellTermSignal(termSignal),
 	}
 
 	if workingDir != "" {
-		opts = append(opts, utask.WithWorkingDir(workingDir))
+		opts = append(opts, utask.WithShellWorkingDir(workingDir))
 	}
 
 	if waitDelay > 0 {
-		opts = append(opts, utask.WithWaitDelay(waitDelay))
+		opts = append(opts, utask.WithShellWaitDelay(waitDelay))
 	}
 
 	task, err := utask.NewShellTask(opts...)

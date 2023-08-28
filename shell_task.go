@@ -11,13 +11,13 @@ import (
 )
 
 type shellTask struct {
-	opts options[ShellTaskOptions]
+	opts options[shellTaskOptions]
 	cmd  *exec.Cmd
 }
 
-func NewShellTask(opts ...TaskOption[ShellTaskOptions]) (Task, error) {
-	mergedOpts := options[ShellTaskOptions]{
-		specific: ShellTaskOptions{
+func NewShellTask(opts ...ShellTaskOption) (Task, error) {
+	mergedOpts := options[shellTaskOptions]{
+		specific: shellTaskOptions{
 			shellTermSignal: syscall.SIGTERM,
 			// set a default wait-delay, so a task will always finish after the
 			// context is canceled (by default 1s after the context is canceled)
@@ -48,6 +48,10 @@ func (t *shellTask) Run() error {
 	}
 
 	return t.Wait()
+}
+
+func (t *shellTask) String() string {
+	return fmt.Sprintf("ShellTask{command:%s, args:%s}", t.opts.specific.shellCommand, strings.Join(t.opts.specific.shellArgs, " "))
 }
 
 func (t *shellTask) Start() error {

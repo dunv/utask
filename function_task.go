@@ -8,16 +8,16 @@ import (
 )
 
 type functionTask struct {
-	opts options[FunctionTaskOptions]
+	opts options[functionTaskOptions]
 
 	stdout io.Writer
 	stderr io.Writer
 	ret    chan error
 }
 
-func NewFunctionTask(opts ...TaskOption[FunctionTaskOptions]) (Task, error) {
-	mergedOpts := options[FunctionTaskOptions]{
-		specific: FunctionTaskOptions{},
+func NewFunctionTask(opts ...FunctionTaskOption) (Task, error) {
+	mergedOpts := options[functionTaskOptions]{
+		specific: functionTaskOptions{},
 	}
 	for _, opt := range opts {
 		if err := opt.apply(&mergedOpts); err != nil {
@@ -58,6 +58,10 @@ func (t *functionTask) Run() error {
 	return t.Wait()
 }
 
+func (t *functionTask) String() string {
+	return fmt.Sprintf("FunctionTask{fn:%p}", t.opts.specific.fn)
+}
+
 func (t *functionTask) Start() error {
 	t.ret = make(chan error)
 
@@ -78,42 +82,3 @@ func (t *functionTask) Wait() error {
 	}
 	return <-t.ret
 }
-
-// func (t *shellTask) runFunction() error {
-// 	// functionOutputChannel := make(chan string)
-// 	// var ctx context.Context
-
-// 	// t.cancelLock.Lock()
-// 	// ctx, t.cancelFunc = context.WithTimeout(context.Background(), t.opts.timeout)
-// 	// t.cancelLock.Unlock()
-
-// 	// go func(functionOutputChannel chan string) {
-// 	// 	for output := range functionOutputChannel {
-// 	// 		t.addOutput(TASK_OUTPUT_STDOUT, output)
-// 	// 	}
-// 	// }(functionOutputChannel)
-
-// 	// go func(ctx context.Context, functionOutputChannel chan string) {
-// 	// 	t.markAsInProgress()
-
-// 	// 	// We are not adding a timeout here, so if a function runs indefinitely this is blocking as well.
-// 	// 	// Canceling needs to be handled within function
-// 	// 	exitCode := t.opts.fn(ctx, functionOutputChannel)
-
-// 	// 	close(functionOutputChannel)
-
-// 	// 	// If context has timed out -> set exitCode manually and add output
-// 	// 	if ctx.Err() != nil {
-// 	// 		exitCode = -1
-// 	// 		t.addOutput(TASK_OUTPUT_STDERR, ctx.Err().Error())
-// 	// 	}
-
-// 	// 	if exitCode == 0 {
-// 	// 		t.markAsSuccessful()
-// 	// 	} else {
-// 	// 		t.markAsFailed(exitCode, ctx.Err())
-// 	// 	}
-// 	// }(ctx, functionOutputChannel)
-
-// 	return nil
-// }

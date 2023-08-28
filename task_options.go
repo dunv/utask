@@ -15,10 +15,10 @@ type options[T specificOptions] struct {
 }
 
 type specificOptions interface {
-	FunctionTaskOptions | ShellTaskOptions
+	functionTaskOptions | shellTaskOptions
 }
 
-type TaskOption[T specificOptions] interface {
+type taskOption[T specificOptions] interface {
 	apply(*options[T]) error
 }
 type funcTaskOption[T specificOptions] struct {
@@ -34,42 +34,42 @@ func newFuncTaskOption[T specificOptions](f func(*options[T]) error) *funcTaskOp
 	return &funcTaskOption[T]{f: f}
 }
 
-func WithContext[T specificOptions](ctx context.Context) TaskOption[T] {
+func withContext[T specificOptions](ctx context.Context) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.ctx = ctx
 		return nil
 	})
 }
 
-func WithMeta[T specificOptions](meta interface{}) TaskOption[T] {
+func withMeta[T specificOptions](meta interface{}) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.meta = meta
 		return nil
 	})
 }
 
-func WithPrintStartAndEndInOutput[T specificOptions]() TaskOption[T] {
+func withPrintStartAndEndInOutput[T specificOptions]() taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.printStartAndEndInOutput = true
 		return nil
 	})
 }
 
-func WithStdout[T specificOptions](w io.Writer) TaskOption[T] {
+func withStdout[T specificOptions](w io.Writer) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.stdout = w
 		return nil
 	})
 }
 
-func WithStderr[T specificOptions](w io.Writer) TaskOption[T] {
+func withStderr[T specificOptions](w io.Writer) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.stderr = w
 		return nil
 	})
 }
 
-func WithCombinedOutput[T specificOptions](w io.Writer) TaskOption[T] {
+func withCombinedOutput[T specificOptions](w io.Writer) taskOption[T] {
 	return newFuncTaskOption(func(o *options[T]) error {
 		o.stdout = w
 		o.stderr = w
