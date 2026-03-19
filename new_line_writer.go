@@ -12,5 +12,6 @@ func newNewLineWriter(w io.Writer) *newLineWriter {
 }
 
 func (w *newLineWriter) Write(p []byte) (n int, err error) {
-	return w.w.Write(append(p, '\n'))
+	_, err = w.w.Write(append(p, '\n'))
+	return len(p), err
 }
