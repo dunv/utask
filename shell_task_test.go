@@ -90,15 +90,12 @@ func TestShellTaskEndlessWithIgnoreExitSignal(t *testing.T) {
 	require.ErrorContains(t, err, "signal: killed")
 	time.Sleep(100 * time.Millisecond)
 
-	// trapped signal might be in output
+	// Go's asynchronous preemption can deliver multiple SIGURG signals.
+	// Their count/order is not part of the task's cancellation contract.
 	out := stdout.Lines()
-	require.Greater(t, len(out), 0)
-	require.Less(t, len(out), 3)
-	if len(out) == 1 {
-		require.Equal(t, "still running", out[0])
-	} else if len(out) == 2 {
-		require.Equal(t, "still running", out[0])
-		require.Equal(t, "trapped urgent I/O condition", out[1])
+	require.NotEmpty(t, out)
+	for _, line := range out {
+		require.Contains(t, []string{"still running", "trapped urgent I/O condition"}, line)
 	}
 	requireOutput(t, stderr, "signal: killed")
 }

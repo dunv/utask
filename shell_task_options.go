@@ -1,6 +1,7 @@
 package utask
 
 import (
+	"errors"
 	"syscall"
 	"time"
 )
@@ -58,7 +59,10 @@ func WithShellWorkingDir(workingDir string) ShellTaskOption {
 	})
 }
 
-// Term signal to be sent to the process-group-id of the command (default: SIGTERM)
+// WithShellTermSignal sets the initial group-cleanup signal (default: SIGTERM).
+// Cleanup follows cancellation, unsuccessful exit or an output error/timeout.
+// A positive WithShellWaitDelay escalates to group-wide SIGKILL after the grace
+// interval, even when the command has exited. SIGKILL skips the grace interval.
 func WithShellTermSignal(termSignal syscall.Signal) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
 		o.specific.shellTermSignal = termSignal
@@ -66,9 +70,16 @@ func WithShellTermSignal(termSignal syscall.Signal) ShellTaskOption {
 	})
 }
 
-// Time to wait after sending the term signal before sending the kill signal (default: 1s)
+// WithShellWaitDelay sets the output-drain timeout and group-termination grace
+// interval (default: 1s). These are separate phases: a drain timeout can trigger
+// cleanup, and cleanup is followed by a final bounded drain. Zero disables drain
+// timeouts and SIGKILL escalation; uncooperative children can then outlive the
+// task or keep it waiting indefinitely. Negative durations are rejected.
 func WithShellWaitDelay(waitDelay time.Duration) ShellTaskOption {
 	return newFuncTaskOption(func(o *options[shellTaskOptions]) error {
+		if waitDelay < 0 {
+			return errors.New("utask: shell wait delay must not be negative")
+		}
 		o.specific.shellWaitDelay = waitDelay
 		return nil
 	})

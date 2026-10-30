@@ -11,8 +11,10 @@ import (
 )
 
 type shellTask struct {
-	opts options[shellTaskOptions]
-	cmd  *exec.Cmd
+	opts   options[shellTaskOptions]
+	cmd    *exec.Cmd
+	done   chan error
+	waited bool
 }
 
 // Create a new shell task
@@ -20,8 +22,7 @@ func NewShellTask(opts ...ShellTaskOption) (Task, error) {
 	mergedOpts := options[shellTaskOptions]{
 		specific: shellTaskOptions{
 			shellTermSignal: syscall.SIGTERM,
-			// set a default wait-delay, so a task will always finish after the
-			// context is canceled (by default 1s after the context is canceled)
+			// Bound output draining and allow graceful group termination.
 			shellWaitDelay: 1 * time.Second,
 		},
 	}
@@ -55,7 +56,15 @@ func (t *shellTask) Run() error {
 // Start the task, but don't wait for it to complete.
 // Can be run in a go-routine if asynchroneous execution is desired.
 func (t *shellTask) Start() error {
-	cmd := exec.CommandContext(t.opts.ctx, t.opts.specific.shellCommand, t.opts.specific.shellArgs...)
+	if t.cmd != nil {
+		return errors.New("utask: already started")
+	}
+	if err := t.opts.ctx.Err(); err != nil {
+		return err
+	}
+	// The task owns cancellation and reaping. exec.CommandContext's watcher
+	// can finish before output draining, and WaitDelay only kills the leader.
+	cmd := exec.Command(t.opts.specific.shellCommand, t.opts.specific.shellArgs...)
 
 	// use process-group-id as handle instead of process-id
 	// set termSignal
@@ -64,43 +73,32 @@ func (t *shellTask) Start() error {
 		Pdeathsig: t.opts.specific.shellTermSignal,
 	}
 
-	// override cancelFunc so the whole processGroup gets terminated
-	cmd.Cancel = func() error {
-		return syscall.Kill(-cmd.Process.Pid, t.opts.specific.shellTermSignal)
-	}
-
 	cmd.Dir = t.opts.specific.shellWorkingDir
 
 	if t.opts.specific.shellEnv != nil {
 		cmd.Env = t.opts.specific.shellEnv
 	}
 
-	if t.opts.stdout != nil {
-		cmd.Stdout = t.opts.stdout
+	output, err := newShellOutput(cmd, t.opts.stdout, t.opts.stderr)
+	if err != nil {
+		return err
 	}
-
-	if t.opts.stderr != nil {
-		cmd.Stderr = t.opts.stderr
-	}
-
-	if t.opts.specific.shellWaitDelay > 0 {
-		cmd.WaitDelay = t.opts.specific.shellWaitDelay
-	}
-
-	// save cmd to task-object (in case Start() + Wait() is used)
-	t.cmd = cmd
 
 	// initial output (helps for debugging what is actually being run here)
 	if t.opts.printStartAndEndInOutput {
 		t.printStdOut("Running command '%s %s'", t.opts.specific.shellCommand, strings.Join(t.opts.specific.shellArgs, " "))
 	}
 
-	err := cmd.Start()
-	if err != nil {
-		t.printStdErr(err.Error())
+	if err := cmd.Start(); err != nil {
+		output.close()
+		t.printStdErr("%s", err)
 		return err
 	}
 
+	t.cmd = cmd
+	t.done = make(chan error, 1)
+	output.start()
+	go func() { t.done <- t.waitShell(output) }()
 	return nil
 }
 
@@ -110,15 +108,17 @@ func (t *shellTask) Wait() error {
 		return errors.New("utask: not started")
 	}
 
+	if t.waited {
+		return errors.New("utask: Wait was already called")
+	}
+	t.waited = true
 	if t.opts.printStartAndEndInOutput {
-		defer func() {
-			t.printStdOut("Done executing")
-		}()
+		defer t.printStdOut("Done executing")
 	}
 
-	err := t.cmd.Wait()
+	err := <-t.done
 	if err != nil {
-		t.printStdErr(err.Error())
+		t.printStdErr("%s", err)
 		return err
 	}
 	return nil
